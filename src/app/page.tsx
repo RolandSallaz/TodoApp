@@ -1,95 +1,62 @@
-import Image from "next/image";
-import styles from "./page.module.css";
+'use client'
+import { Button, TextField } from "@mui/material";
+import styles from "./page.module.scss";
+import { useAppDispatch, useAppSelector } from "@/utils/redux/store";
+import TodoItem from "./components/TodoItem/TodoItem";
+import { ChangeEvent, SyntheticEvent, useState, MouseEvent, useEffect } from "react";
+import { apiDeleteTodo, apiGetTodos, apiPostTodo, apiUpdateTodo } from "@/utils/api";
+import { addTodo, closePopup, deleteTodo, loadTodos, updateTodo } from "@/utils/redux/slices/appSlice";
+import { ITodo } from "@/utils/types";
+import Popup from "./components/Popup/Popup";
 
 export default function Home() {
+  const [newTodo, setNewTodo] = useState<string>('');
+  const { todos, confirmPopup } = useAppSelector(state => state.appSlice);
+  const dispatch = useAppDispatch();
+  function handleChangeNewTodo(e: ChangeEvent<HTMLInputElement>) {
+    setNewTodo(e.target.value);
+  }
+
+  function handleAddNewTodo(e: MouseEvent<HTMLButtonElement>) {
+    apiPostTodo(newTodo).then((res) => {
+      dispatch(addTodo(res))
+    }).catch(console.log)
+  }
+
+  function handleDeleteTodo(id: number) {
+    apiDeleteTodo(id).then((res) => {
+      dispatch(deleteTodo(id))
+      dispatch(closePopup());
+    }).catch(console.log)
+  }
+
+  function handleUpdateTodo(item: ITodo, successCb: () => void) {
+    apiUpdateTodo(item).then((res) => {
+      successCb();
+      dispatch(updateTodo(res))
+    }).catch(console.log)
+  }
+
+  useEffect(() => {
+    apiGetTodos().then((res) => {
+      dispatch(loadTodos(res))
+    }).catch(console.log)
+  }, [])
+
   return (
     <div className={styles.page}>
       <main className={styles.main}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol>
-          <li>
-            Get started by editing <code>src/app/page.tsx</code>.
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
-
-        <div className={styles.ctas}>
-          <a
-            className={styles.primary}
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className={styles.logo}
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-            className={styles.secondary}
-          >
-            Read our docs
-          </a>
+        <div className={styles.addContainer}>
+          <TextField id="outlined-basic" label="Дело" variant="outlined" onChange={handleChangeNewTodo} value={newTodo} fullWidth />
+          <Button variant="contained" onClick={handleAddNewTodo}>Добавить</Button>
+        </div>
+        <div className={styles.todosContainer}>
+          {todos?.map(item => (<TodoItem key={item.id} item={item} onUpdate={handleUpdateTodo} />))}
         </div>
       </main>
-      <footer className={styles.footer}>
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+      {confirmPopup.isOpened &&
+        <Popup onConfirm={handleDeleteTodo} />
+      }
     </div>
   );
 }

@@ -1,0 +1,17 @@
+.todo-item {
+    margin-top: 5px;
+    display: flex;
+    justify-content: space-between;
+    gap:5px;
+    height: 56px;
+    align-items: center;
+    &__button-container {
+        display: flex;
+        gap:5px;
+        height: 100%;
+    }
+    &__text {
+        padding: 14px;
+        text-align: center;
+    }
+}
